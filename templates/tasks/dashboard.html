@@ -1,0 +1,106 @@
+{% extends 'base.html' %}
+{% block title %}Dashboard - TaskFlow{% endblock %}
+{% block content %}
+<div class="dashboard-wrapper">
+    <!-- Stats Cards -->
+    <div class="stats-grid">
+        <div class="stat-card stat-total">
+            <div class="stat-icon">📋</div>
+            <div class="stat-info">
+                <div class="stat-number">{{ stats.total }}</div>
+                <div class="stat-label">Total Tasks</div>
+            </div>
+        </div>
+        <div class="stat-card stat-pending">
+            <div class="stat-icon">🕐</div>
+            <div class="stat-info">
+                <div class="stat-number">{{ stats.pending }}</div>
+                <div class="stat-label">Pending</div>
+            </div>
+        </div>
+        <div class="stat-card stat-progress">
+            <div class="stat-icon">⚡</div>
+            <div class="stat-info">
+                <div class="stat-number">{{ stats.in_progress }}</div>
+                <div class="stat-label">In Progress</div>
+            </div>
+        </div>
+        <div class="stat-card stat-done">
+            <div class="stat-icon">✅</div>
+            <div class="stat-info">
+                <div class="stat-number">{{ stats.completed }}</div>
+                <div class="stat-label">Completed</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters & Search -->
+    <div class="filter-bar">
+        <form method="GET" class="filter-form">
+            <input type="text" name="q" value="{{ search_query }}" class="form-input search-input" placeholder="🔍 Search tasks...">
+            <select name="status" class="form-input filter-select">
+                <option value="">All Status</option>
+                <option value="pending" {% if status_filter == 'pending' %}selected{% endif %}>Pending</option>
+                <option value="in_progress" {% if status_filter == 'in_progress' %}selected{% endif %}>In Progress</option>
+                <option value="completed" {% if status_filter == 'completed' %}selected{% endif %}>Completed</option>
+            </select>
+            <select name="priority" class="form-input filter-select">
+                <option value="">All Priority</option>
+                <option value="high" {% if priority_filter == 'high' %}selected{% endif %}>🔴 High</option>
+                <option value="medium" {% if priority_filter == 'medium' %}selected{% endif %}>🟡 Medium</option>
+                <option value="low" {% if priority_filter == 'low' %}selected{% endif %}>🟢 Low</option>
+            </select>
+            <button type="submit" class="btn btn-secondary">Filter</button>
+            {% if status_filter or priority_filter or search_query %}
+            <a href="{% url 'dashboard' %}" class="btn btn-outline">Clear</a>
+            {% endif %}
+        </form>
+        <a href="{% url 'task_create' %}" class="btn btn-primary">+ Add Task</a>
+    </div>
+
+    <!-- Tasks List -->
+    {% if tasks %}
+    <div class="tasks-grid">
+        {% for task in tasks %}
+        <div class="task-card priority-{{ task.priority }} {% if task.status == 'completed' %}task-done{% endif %}">
+            <div class="task-header">
+                <div class="task-badges">
+                    <span class="badge badge-priority-{{ task.priority }}">
+                        {% if task.priority == 'high' %}🔴{% elif task.priority == 'medium' %}🟡{% else %}🟢{% endif %}
+                        {{ task.get_priority_display }}
+                    </span>
+                    <span class="badge badge-status-{{ task.status }}">{{ task.get_status_display }}</span>
+                </div>
+                <div class="task-actions">
+                    <a href="{% url 'task_toggle' task.pk %}" class="action-btn" title="Toggle complete">
+                        {% if task.status == 'completed' %}↩{% else %}✓{% endif %}
+                    </a>
+                    <a href="{% url 'task_edit' task.pk %}" class="action-btn" title="Edit">✏️</a>
+                    <a href="{% url 'task_delete' task.pk %}" class="action-btn action-danger" title="Delete">🗑️</a>
+                </div>
+            </div>
+            <h3 class="task-title">{{ task.title }}</h3>
+            {% if task.description %}
+            <p class="task-desc">{{ task.description|truncatechars:100 }}</p>
+            {% endif %}
+            <div class="task-footer">
+                {% if task.due_date %}
+                <span class="task-due {% if task.due_date < today %}overdue{% endif %}">
+                    📅 {{ task.due_date|date:"M d, Y" }}
+                </span>
+                {% endif %}
+                <span class="task-created">{{ task.created_at|timesince }} ago</span>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <div class="empty-icon">📝</div>
+        <h3>No tasks found</h3>
+        <p>{% if search_query or status_filter or priority_filter %}Try adjusting your filters.{% else %}Create your first task to get started!{% endif %}</p>
+        <a href="{% url 'task_create' %}" class="btn btn-primary">+ Create Task</a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
